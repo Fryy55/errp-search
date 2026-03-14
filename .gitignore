@@ -1,0 +1,3 @@
+# local python files
+.venv/
+__pycache__/
