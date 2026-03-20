@@ -1,14 +1,23 @@
 [project]
-name = "errp-search"
+name = "rrpo-search"
 version = "1.0.0"
 requires-python = ">=3.14"
 dependencies = [
+    "httpx>=0.28.1",
+    "lxml>=6.0.2",
+    "platformdirs>=4.9.4",
+    "rapidfuzz>=3.14.3",
     "rich>=14.3.3",
     "typer>=0.24.1",
 ]
 
 [project.scripts]
-errp-search = "errp_search.main:app"
+rrpo-search = "rrpo_search.main:app"
 
 [tool.uv]
 package = true
+
+[dependency-groups]
+dev = [
+    "types-lxml>=2026.2.16",
+]
