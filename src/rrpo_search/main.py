@@ -3,8 +3,8 @@ from rich.console import Console
 from rich.table import Table
 from rrpo_search.utils import download_xml, parse_xml, get_xml_path, get_db_conn
 import os
-
 from rapidfuzz import process, fuzz
+import sqlite3
 
 
 app = Typer(
@@ -17,8 +17,20 @@ console = Console()
 
 @app.command()
 def search(query: str, raw: bool = False):
-	'''[blue bold]Поиск по реестру[/blue bold]'''
+	'''[blue bold]Поиск по реестру. Используйте [light blue]--raw[/light blue] для прямых SQL-запросов[/blue bold]'''
 	cursor = get_db_conn().cursor()
+
+	if raw:
+		console.print(f'[blue bold]Поиск в режиме raw\nЗапрос: "{query}"[/blue bold]')
+		try:
+			cursor.execute(query)
+		except sqlite3.Error as error:
+			console.print(f'[red bold]Ошибка SQLite3: {error}[/red bold]')
+			return
+
+		console.print(f'[green]{cursor.fetchall()}[/green]')
+		return
+
 	cursor.execute('SELECT term FROM reestr_vocab')
 	vocab = list[str](map(lambda x: x[0], cursor.fetchall()))
 
