@@ -6,6 +6,7 @@ import sqlite3
 import os
 from rich.progress import Progress, BarColumn, DownloadColumn, TransferSpeedColumn, TextColumn, SpinnerColumn, TimeRemainingColumn
 from rich.console import Console
+from rich.table import Table
 
 
 columns = """
@@ -26,7 +27,25 @@ columns = """
 	excl_num UNINDEXED,
 	excl_type UNINDEXED
 """
-columns_insert = columns.replace(' UNINDEXED', '')
+columns_names = [
+	'Номер записи',
+	'Название',
+	'Пред. название',
+	'Модуль',
+	'Владелец',
+	'Владелец (сокращ.)',
+	'Описание (URL)',
+	'Цена (URL)',
+	'Дата гос. регистр.',
+	'Номер гос. регистр.',
+	'Дата включения',
+	'Номер включения',
+	'Исключено',
+	'Дата искл.',
+	'Номер искл.',
+	'Тип искл.'
+]
+columns_query = columns.replace(' UNINDEXED', '')
 
 
 def get_data_path():
@@ -87,7 +106,7 @@ def parse_xml():
 	with Progress(
 		SpinnerColumn(),
 		TextColumn("[bold blue]Перевод в базу данных..."),
-		BarColumn(),
+		BarColumn(bar_width=None),
 		"[progress.percentage]{task.percentage:>3.1f}%",
 		TimeRemainingColumn(),
 	)  as progress:
@@ -120,7 +139,7 @@ def parse_xml():
 				cursor.execute(
 					f"""
 						INSERT INTO reestr (
-							{columns_insert}
+							{columns_query}
 						) VALUES (
 							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 						)
@@ -130,7 +149,7 @@ def parse_xml():
 				cursor.execute(
 					f"""
 						INSERT INTO reestr_raw (
-							{columns_insert}
+							{columns_query}
 						) VALUES (
 							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 						)
@@ -170,3 +189,27 @@ def download_xml():
 					f.write(i)
 
 					progress.update(task, advance=len(i))
+
+
+def print_matches(matches: list[tuple[()]]):
+	table = Table(show_lines=True, highlight=True)
+
+	for i in columns_names:
+		table.add_column(i, overflow='fold')
+
+	for i in matches:
+		row_data = list[str]()
+		for j in range(len(columns_names)):
+			row_data.append(i[j])
+			if row_data[-1] == '' or row_data[-1] is None: # pyright: ignore[reportUnnecessaryComparison]
+				row_data[-1] = '-'
+			row_data[-1] = row_data[-1].replace('&quot;', '"')
+
+			if j == 12 and row_data[-1] != 'Нет':
+				row_data[-1] = f'[bold red]{row_data[-1]}[/bold red]'
+
+		table.add_row(
+			row_data[0], row_data[1], row_data[2], row_data[3], row_data[4], row_data[5], row_data[6], row_data[7], row_data[8], row_data[9], row_data[10], row_data[11], row_data[12], row_data[13], row_data[14], row_data[15]
+		)
+
+	Console().print(table)
